@@ -6,4 +6,5 @@ build/
 .next/
 *.log
 .DS_Store
+*.tsbuildinfo
 /generated/prisma
