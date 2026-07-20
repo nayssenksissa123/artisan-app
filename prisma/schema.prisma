@@ -1,0 +1,224 @@
+// ============================================================
+// Schéma Prisma — artisan-app
+// Basé sur le diagramme de classes fourni par le chef de projet
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------------
+// Enums
+// ------------------------------------------------------------
+
+enum Role {
+  CLIENT
+  ARTISAN
+  ADMINISTRATEUR
+}
+
+enum StatutDemande {
+  EN_ATTENTE
+  ACCEPTEE
+  REFUSEE
+  EN_COURS
+  TERMINEE
+  ANNULEE
+}
+
+enum StatutPaiement {
+  EN_ATTENTE
+  VALIDE
+  ECHOUE
+  REMBOURSE
+}
+
+// ------------------------------------------------------------
+// Utilisateur (table de base — héritage par table de sous-type)
+// ------------------------------------------------------------
+
+model Utilisateur {
+  id          Int      @id @default(autoincrement())
+  nom         String
+  email       String   @unique
+  motDePasse  String
+  telephone   String?
+  role        Role
+  dateCreation DateTime @default(now())
+
+  client         Client?
+  artisan        Artisan?
+  administrateur Administrateur?
+
+  messages Message[]
+
+  @@map("utilisateurs")
+}
+
+model Client {
+  id            Int    @id
+  utilisateur   Utilisateur @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  demandes      Demande[]
+  avisEcrits    Avis[]
+
+  @@map("clients")
+}
+
+model Artisan {
+  id            Int      @id
+  utilisateur   Utilisateur @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  description   String?
+  experience    Int?
+  ville         String?
+  latitude      Float?
+  longitude     Float?
+  disponibilite Boolean  @default(true)
+  estVerifie    Boolean  @default(false)
+  noteMoyenne   Float    @default(0)
+
+  servicesProposes ServiceArtisan[]
+  demandesAcceptees Demande[]
+  avisRecus         Avis[]
+
+  @@map("artisans")
+}
+
+model Administrateur {
+  id          Int    @id
+  utilisateur Utilisateur @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  @@map("administrateurs")
+}
+
+// ------------------------------------------------------------
+// Catégories & Services
+// ------------------------------------------------------------
+
+model Categorie {
+  id       Int       @id @default(autoincrement())
+  nom      String    @unique
+
+  services Service[]
+
+  @@map("categories")
+}
+
+model Service {
+  id          Int      @id @default(autoincrement())
+  nom         String
+  description String?
+
+  categorieId Int
+  categorie   Categorie @relation(fields: [categorieId], references: [id], onDelete: Restrict)
+
+  servicesArtisans ServiceArtisan[]
+
+  @@map("services")
+}
+
+model ServiceArtisan {
+  id     Int   @id @default(autoincrement())
+  prix   Float
+
+  artisanId Int
+  artisan   Artisan @relation(fields: [artisanId], references: [id], onDelete: Cascade)
+
+  serviceId Int
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  demandes Demande[]
+
+  @@unique([artisanId, serviceId])
+  @@map("services_artisans")
+}
+
+// ------------------------------------------------------------
+// Demandes de service
+// ------------------------------------------------------------
+
+model Demande {
+  id           Int           @id @default(autoincrement())
+  description  String
+  adresse      String
+  statut       StatutDemande @default(EN_ATTENTE)
+  dateCreation DateTime      @default(now())
+
+  clientId Int
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  serviceArtisanId Int
+  serviceArtisan   ServiceArtisan @relation(fields: [serviceArtisanId], references: [id], onDelete: Restrict)
+
+  artisanId Int?
+  artisan   Artisan? @relation(fields: [artisanId], references: [id], onDelete: SetNull)
+
+  messages Message[]
+  avis     Avis?
+  paiement Paiement?
+
+  @@map("demandes")
+}
+
+// ------------------------------------------------------------
+// Messagerie
+// ------------------------------------------------------------
+
+model Message {
+  id           Int      @id @default(autoincrement())
+  contenu      String
+  dateCreation DateTime @default(now())
+
+  demandeId Int
+  demande   Demande @relation(fields: [demandeId], references: [id], onDelete: Cascade)
+
+  expediteurId Int
+  expediteur   Utilisateur @relation(fields: [expediteurId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+// ------------------------------------------------------------
+// Avis
+// ------------------------------------------------------------
+
+model Avis {
+  id          Int      @id @default(autoincrement())
+  note        Int
+  commentaire String?
+  date        DateTime @default(now())
+
+  clientId Int
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  artisanId Int
+  artisan   Artisan @relation(fields: [artisanId], references: [id], onDelete: Cascade)
+
+  demandeId Int? @unique
+  demande   Demande? @relation(fields: [demandeId], references: [id], onDelete: SetNull)
+
+  @@map("avis")
+}
+
+// ------------------------------------------------------------
+// Paiement
+// ------------------------------------------------------------
+
+model Paiement {
+  id            Int            @id @default(autoincrement())
+  montant       Float
+  methode       String
+  statut        StatutPaiement @default(EN_ATTENTE)
+  datePaiement  DateTime       @default(now())
+
+  demandeId Int @unique
+  demande   Demande @relation(fields: [demandeId], references: [id], onDelete: Cascade)
+
+  @@map("paiements")
+}
