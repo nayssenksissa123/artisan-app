@@ -1,5 +1,5 @@
 {
-  "name": "artisan-app",
+  "name": "api",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -29,6 +29,9 @@
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^26.1.1",
     "@types/passport-jwt": "^4.0.1",
+    "@types/pg": "^8.20.3",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
     "prisma": "^6.19.3",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
@@ -44,8 +47,10 @@
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "drizzle-orm": "^0.45.2",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "pg": "^8.22.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },

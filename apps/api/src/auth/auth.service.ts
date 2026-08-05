@@ -1,48 +1,49 @@
 import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../prisma/prisma.service';
+import { eq } from 'drizzle-orm';
+import { db } from '../drizzle/db';
+import { utilisateurs, clients, artisans } from '../drizzle/schema';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
-  ) {}
+  constructor(private jwtService: JwtService) {}
 
   async register(dto: RegisterDto) {
-    // Vérifier que l'email n'existe pas déjà
-    const existant = await this.prisma.utilisateur.findUnique({
-      where: { email: dto.email },
+    const existant = await db.query.utilisateurs.findFirst({
+      where: eq(utilisateurs.email, dto.email),
     });
     if (existant) {
       throw new ConflictException('Un compte existe déjà avec cet email.');
     }
 
-    // Hasher le mot de passe (jamais stocké en clair !)
     const motDePasseHash = await bcrypt.hash(dto.motDePasse, 10);
 
-    // Créer l'utilisateur de base + son sous-type (Client ou Artisan)
-    const utilisateur = await this.prisma.utilisateur.create({
-      data: {
+    const [utilisateur] = await db
+      .insert(utilisateurs)
+      .values({
         nom: dto.nom,
         email: dto.email,
         motDePasse: motDePasseHash,
         telephone: dto.telephone,
         role: dto.role,
-        ...(dto.role === 'CLIENT' && { client: { create: {} } }),
-        ...(dto.role === 'ARTISAN' && { artisan: { create: {} } }),
-      },
-    });
+      })
+      .returning();
+
+    if (dto.role === 'CLIENT') {
+      await db.insert(clients).values({ id: utilisateur.id });
+    } else if (dto.role === 'ARTISAN') {
+      await db.insert(artisans).values({ id: utilisateur.id });
+    }
 
     return this.genererToken(utilisateur.id, utilisateur.email, utilisateur.role);
   }
 
   async login(dto: LoginDto) {
-    const utilisateur = await this.prisma.utilisateur.findUnique({
-      where: { email: dto.email },
+    const utilisateur = await db.query.utilisateurs.findFirst({
+      where: eq(utilisateurs.email, dto.email),
     });
     if (!utilisateur) {
       throw new UnauthorizedException('Email ou mot de passe incorrect.');
