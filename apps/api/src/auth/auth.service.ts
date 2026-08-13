@@ -57,6 +57,39 @@ export class AuthService {
     return this.genererToken(utilisateur.id, utilisateur.email, utilisateur.role);
   }
 
+  async oauthLogin(profile: any) {
+    const email = profile.emails?.[0]?.value;
+    if (!email) {
+      throw new UnauthorizedException('Email not provided by OAuth provider.');
+    }
+
+    let utilisateur = await db.query.utilisateurs.findFirst({
+      where: eq(utilisateurs.email, email),
+    });
+
+    if (!utilisateur) {
+      const nom = profile.displayName || (profile.name ? `${profile.name.givenName || ''} ${profile.name.familyName || ''}`.trim() : '');
+      const randomPass = Date.now().toString() + Math.random().toString(36).slice(2);
+      const motDePasseHash = await bcrypt.hash(randomPass, 10);
+
+      const [created] = await db
+        .insert(utilisateurs)
+        .values({
+          nom,
+          email,
+          motDePasse: motDePasseHash,
+          telephone: null,
+          role: 'CLIENT',
+        })
+        .returning();
+
+      utilisateur = created;
+      await db.insert(clients).values({ id: utilisateur.id });
+    }
+
+    return this.genererToken(utilisateur.id, utilisateur.email, utilisateur.role);
+  }
+
   private genererToken(userId: number, email: string, role: string) {
     const payload = { sub: userId, email, role };
     return {

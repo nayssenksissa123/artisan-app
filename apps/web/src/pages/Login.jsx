@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/client';
 import { Eye, EyeOff, Mail, Lock, LogIn } from 'lucide-react';
@@ -28,6 +28,19 @@ export default function Login() {
       setChargement(false);
     }
   };
+
+  const handleOAuth = (provider) => {
+    window.location.href = `http://localhost:3000/auth/${provider}`;
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (token) {
+      localStorage.setItem('token', token);
+      navigate('/profil');
+    }
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 flex items-center justify-center px-4 py-8">
@@ -89,6 +102,35 @@ export default function Login() {
                 <p className="text-gray-600">
                   Accédez à votre compte personnel
                 </p>
+              </div>
+
+              {/* Social login */}
+              <div className="mb-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => handleOAuth('google')}
+                    className="flex items-center justify-center space-x-3 py-2 px-4 rounded-lg border border-gray-200 bg-white hover:shadow transition"
+                  >
+                    <span className="w-5 h-5 rounded-full bg-white flex items-center justify-center text-sm font-bold text-gray-700">G</span>
+                    <span className="text-sm font-medium text-gray-700">Continuer avec Google</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOAuth('facebook')}
+                    className="flex items-center justify-center space-x-3 py-2 px-4 rounded-lg border border-gray-200 bg-white hover:shadow transition"
+                  >
+                    <span className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold">f</span>
+                    <span className="text-sm font-medium text-gray-700">Continuer avec Facebook</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center my-4">
+                  <div className="flex-1 h-px bg-gray-200"></div>
+                  <div className="px-3 text-sm text-gray-500">ou</div>
+                  <div className="flex-1 h-px bg-gray-200"></div>
+                </div>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
