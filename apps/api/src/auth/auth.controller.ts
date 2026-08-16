@@ -44,7 +44,11 @@ export class AuthController {
       return this.redirectToDemo(res, 'google');
     }
 
-    return passport.authenticate('google', { scope: ['email', 'profile'] })(req, res, next);
+    const options: any = { scope: ['email', 'profile'] };
+    // preserve popup intent through OAuth state so callback can respond with postMessage
+    if ((req.query as any).popup) options.state = 'popup';
+
+    return passport.authenticate('google', options)(req, res, next);
   }
 
   @Get('google/callback')
@@ -60,6 +64,11 @@ export class AuthController {
       }
       const token = await this.authService.oauthLogin(user);
       const frontend = process.env.FRONTEND_URL || 'http://localhost:5173';
+      // If OAuth state indicates popup flow, respond with an HTML page that posts the token to the opener
+      if ((req.query as any).state === 'popup') {
+        const safeOrigin = frontend;
+        return res.send(`<html><body><script>window.opener.postMessage({token: '${token.access_token}'}, '${safeOrigin}'); window.close();</script></body></html>`);
+      }
       return res.redirect(`${frontend}/inscription?token=${token.access_token}`);
     })(req, res, next);
   }
@@ -70,7 +79,10 @@ export class AuthController {
       return this.redirectToDemo(res, 'facebook');
     }
 
-    return passport.authenticate('facebook', { scope: ['email'] })(req, res, next);
+    const options: any = { scope: ['email'] };
+    if ((req.query as any).popup) options.state = 'popup';
+
+    return passport.authenticate('facebook', options)(req, res, next);
   }
 
   @Get('facebook/callback')
@@ -86,6 +98,10 @@ export class AuthController {
       }
       const token = await this.authService.oauthLogin(user);
       const frontend = process.env.FRONTEND_URL || 'http://localhost:5173';
+      if ((req.query as any).state === 'popup') {
+        const safeOrigin = frontend;
+        return res.send(`<html><body><script>window.opener.postMessage({token: '${token.access_token}'}, '${safeOrigin}'); window.close();</script></body></html>`);
+      }
       return res.redirect(`${frontend}/inscription?token=${token.access_token}`);
     })(req, res, next);
   }

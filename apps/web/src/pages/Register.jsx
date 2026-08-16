@@ -36,8 +36,31 @@ export default function Register() {
   };
 
   const handleOAuth = (provider) => {
-    // Redirige vers l'endpoint OAuth du backend
-    window.location.href = `http://localhost:3000/auth/${provider}`;
+    // Open OAuth flow in a popup and listen for token via postMessage
+    const width = 600;
+    const height = 700;
+    const left = window.screenX + (window.innerWidth - width) / 2;
+    const top = window.screenY + (window.innerHeight - height) / 2;
+    const popup = window.open(
+      `http://localhost:3000/auth/${provider}?popup=1`,
+      'oauth',
+      `width=${width},height=${height},left=${left},top=${top}`
+    );
+
+    const handleMessage = (e) => {
+      // Accept messages from our frontend origin only
+      const origin = window.location.origin;
+      if (e.origin !== origin) return;
+      const token = e.data?.token;
+      if (token) {
+        localStorage.setItem('token', token);
+        window.removeEventListener('message', handleMessage);
+        try { popup.close(); } catch (e) {}
+        navigate('/profil');
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
   };
 
   useEffect(() => {
