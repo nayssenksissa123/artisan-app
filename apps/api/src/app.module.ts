@@ -9,6 +9,7 @@ import { ServicesArtisansModule } from './modules/services-artisans.module';
 import { DemandesModule } from './modules/demandes.module';
 import { MessagesModule } from './modules/messages.module';
 import { AvisModule } from './modules/avis.module';
+import { PaiementsModule } from './modules/paiements.module';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { AvisModule } from './modules/avis.module';
     ServicesArtisansModule,
     DemandesModule,
     MessagesModule,
-    AvisModule,
+    AvisModule,    PaiementsModule,
   ],
 })
 export class AppModule {}
