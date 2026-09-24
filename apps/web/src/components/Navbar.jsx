@@ -1,8 +1,18 @@
-﻿import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+
+function decodeToken(token) {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch {
+    return null;
+  }
+}
 
 export default function Navbar() {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
+  const user = token ? decodeToken(token) : null;
+  const role = user ? user.role : null;
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -23,12 +33,37 @@ export default function Navbar() {
             <Link to="/" className="text-gray-600 hover:text-primary-700 font-medium transition">
               Accueil
             </Link>
-            <Link to="/artisans" className="text-gray-600 hover:text-primary-700 font-medium transition">
-              Trouver un artisan
-            </Link>
-            <Link to="/categories" className="text-gray-600 hover:text-primary-700 font-medium transition">
-              Services
-            </Link>
+
+            {/* CLIENT : Trouver un artisan + Services */}
+            {(!role || role === 'CLIENT') && (
+              <>
+                <Link to="/artisans" className="text-gray-600 hover:text-primary-700 font-medium transition">
+                  Trouver un artisan
+                </Link>
+                <Link to="/categories" className="text-gray-600 hover:text-primary-700 font-medium transition">
+                  Services
+                </Link>
+              </>
+            )}
+
+            {/* ARTISAN : Planning + Services */}
+            {role === 'ARTISAN' && (
+              <>
+                <Link to="/planning" className="text-gray-600 hover:text-primary-700 font-medium transition">
+                  Planning
+                </Link>
+                <Link to="/categories" className="text-gray-600 hover:text-primary-700 font-medium transition">
+                  Services
+                </Link>
+              </>
+            )}
+
+            {/* Mes demandes : visible pour les deux roles */}
+            {token && (
+              <Link to="/demandes" className="text-gray-600 hover:text-primary-700 font-medium transition">
+                Mes demandes
+              </Link>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -44,7 +79,7 @@ export default function Navbar() {
                   onClick={handleLogout}
                   className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium transition"
                 >
-                  Déconnexion
+                  Deconnexion
                 </button>
               </>
             ) : (

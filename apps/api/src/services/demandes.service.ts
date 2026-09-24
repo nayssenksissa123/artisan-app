@@ -1,18 +1,29 @@
-﻿import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { db } from '../drizzle/db';
 import { DemandeModel } from '../models/demande.model';
+import { ServiceArtisanModel } from '../models/service-artisan.model';
+import { inArray } from 'drizzle-orm';
 import { CreateDemandeDto, UpdateStatutDemandeDto } from '../dto/create-demande.dto';
 
 @Injectable()
 export class DemandesService {
   async findAll() {
-    return db.query.demandes.findMany();
+    return db.query.demandes.findMany({
+      with: {
+        client: { with: { utilisateur: true } },
+        serviceArtisan: { with: { service: true } },
+      },
+    });
   }
 
   async findOne(id: number) {
     const demande = await db.query.demandes.findFirst({
       where: eq(DemandeModel.id, id),
+      with: {
+        client: { with: { utilisateur: true } },
+        serviceArtisan: { with: { service: true } },
+      },
     });
     if (!demande) {
       throw new NotFoundException('Demande introuvable.');
@@ -23,18 +34,31 @@ export class DemandesService {
   async findByClient(clientId: number) {
     return db.query.demandes.findMany({
       where: eq(DemandeModel.clientId, clientId),
+      with: {
+        client: { with: { utilisateur: true } },
+        serviceArtisan: { with: { service: true } },
+      },
     });
   }
 
   async findByArtisan(artisanId: number) {
+    const services = await db.query.servicesArtisans.findMany({
+      where: eq(ServiceArtisanModel.artisanId, artisanId),
+    });
+    const serviceArtisanIds = services.map((s) => s.id);
+    if (serviceArtisanIds.length === 0) return [];
     return db.query.demandes.findMany({
-      where: eq(DemandeModel.artisanId, artisanId),
+      where: inArray(DemandeModel.serviceArtisanId, serviceArtisanIds),
+      with: {
+        client: { with: { utilisateur: true } },
+        serviceArtisan: { with: { service: true } },
+      },
     });
   }
 
   async create(dto: CreateDemandeDto) {
     const serviceArtisan = await db.query.servicesArtisans.findFirst({
-      where: eq(DemandeModel.serviceArtisanId, dto.serviceArtisanId),
+      where: eq(ServiceArtisanModel.id, dto.serviceArtisanId),
     });
 
     const [nouvelle] = await db.insert(DemandeModel).values(dto).returning();

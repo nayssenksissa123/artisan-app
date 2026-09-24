@@ -31,6 +31,22 @@ export class UsersService {
     return utilisateur;
   }
 
+  async getUserPublic(id: number) {
+    const utilisateur = await db.query.utilisateurs.findFirst({
+      where: eq(utilisateurs.id, id),
+      columns: {
+        id: true,
+        nom: true,
+      },
+    });
+
+    if (!utilisateur) {
+      throw new NotFoundException('Utilisateur introuvable.');
+    }
+
+    return utilisateur;
+  }
+
   async updateProfil(userId: number, dto: UpdateProfileDto) {
     const updateData: Record<string, any> = {};
     if (dto.nom) updateData.nom = dto.nom;
@@ -49,6 +65,7 @@ export class UsersService {
       if (dto.description !== undefined) artisanUpdateData.description = dto.description;
       if (dto.experience !== undefined) artisanUpdateData.experience = dto.experience;
       if (dto.ville !== undefined) artisanUpdateData.ville = dto.ville;
+      if (dto.localisation !== undefined) artisanUpdateData.localisation = dto.localisation;
       if (dto.latitude !== undefined) artisanUpdateData.latitude = dto.latitude;
       if (dto.longitude !== undefined) artisanUpdateData.longitude = dto.longitude;
       if (dto.disponibilite !== undefined) artisanUpdateData.disponibilite = dto.disponibilite;

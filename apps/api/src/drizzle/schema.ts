@@ -47,6 +47,7 @@ export const artisans = pgTable('artisans', {
   description: text('description'),
   experience: integer('experience'),
   ville: varchar('ville', { length: 255 }),
+  localisation: varchar('localisation', { length: 255 }),
   latitude: real('latitude'),
   longitude: real('longitude'),
   disponibilite: boolean('disponibilite').default(true).notNull(),

@@ -22,6 +22,10 @@ export class UpdateProfileDto {
   ville?: string;
 
   @IsOptional()
+  @IsString()
+  localisation?: string;
+
+  @IsOptional()
   @IsNumber()
   latitude?: number;
 
