@@ -1,4 +1,4 @@
-﻿import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { db } from '../drizzle/db';
 import { AvisModel } from '../models/avis.model';
@@ -23,6 +23,13 @@ export class AvisService {
   async findByArtisan(artisanId: number) {
     return db.query.avis.findMany({
       where: eq(AvisModel.artisanId, artisanId),
+      with: {
+        client: {
+          with: {
+            utilisateur: true,
+          },
+        },
+      },
     });
   }
 

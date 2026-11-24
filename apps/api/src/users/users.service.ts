@@ -49,8 +49,8 @@ export class UsersService {
 
   async updateProfil(userId: number, dto: UpdateProfileDto) {
     const updateData: Record<string, any> = {};
-    if (dto.nom) updateData.nom = dto.nom;
-    if (dto.telephone) updateData.telephone = dto.telephone;
+    if (dto.nom !== undefined && dto.nom.trim() !== '') updateData.nom = dto.nom.trim();
+    if (dto.telephone !== undefined) updateData.telephone = dto.telephone;
 
     if (Object.keys(updateData).length > 0) {
       await db.update(utilisateurs).set(updateData).where(eq(utilisateurs.id, userId));
